@@ -1,0 +1,46 @@
+
+import random
+from collections import Counter
+
+def simuleaza_experiment(numar_simulari):
+    # Bilele inițiale în urnă
+    bile_initiale = {'rosie': 3, 'albastra': 4, 'neagra': 2}
+    bile_obtinute = []
+
+    for _ in range(numar_simulari):
+        
+        zar = random.randint(1, 6)
+        
+        # Det bilele care vor fi adăugate în funcție de rezultat
+        if zar in [2, 3, 5]: 
+            bile_initiale['neagra'] += 1
+        elif zar == 6:
+            bile_initiale['rosie'] += 1
+        else: 
+            bile_initiale['albastra'] += 1
+
+            # Extragem o bilă
+        total_bile = sum(bile_initiale.values())
+        bila_aleasa = random.choices(
+            list(bile_initiale.keys()), 
+            weights=bile_initiale.values(), 
+            k=1
+        )[0]
+
+        bile_obtinute.append(bila_aleasa)
+        
+        # Resetăm urna
+        bile_initiale = {'rosie': 3, 'albastra': 4, 'neagra': 2}
+    
+    return bile_obtinute
+
+numar_simulari = 100000
+
+bile_obtinute = simuleaza_experiment(numar_simulari)
+
+# Calc probab de a obține o bilă roșie
+numar_bile_rosii = bile_obtinute.count('rosie')
+probabilitate_bila_rosie = numar_bile_rosii / numar_simulari
+
+# Afișăm rezultatul
+print(f"Probabilitatea de a obține o bilă roșie este: {probabilitate_bila_rosie:.4f}")
