@@ -1,0 +1,50 @@
+from pgmpy.models import MarkovNetwork
+from pgmpy.factors.discrete import DiscreteFactor
+from pgmpy.inference import BeliefPropagation
+import numpy as np
+
+# Datele de intrare
+n = 5
+edges = [(0, 1), (1, 2), (1, 3), (3, 4)]  # muchiile dintre statii (vecini)
+initial_probabilities = {
+    0: [0.5, 0.3, 0.2],  # P(Soare) = 0.5, P(Ploaie) = 0.3, P(Nori) = 0.2
+    1: [0.6, 0.2, 0.2],
+    2: [0.4, 0.4, 0.2],
+    3: [0.7, 0.1, 0.2],
+    4: [0.3, 0.4, 0.3]
+}
+
+# Definim reteaua Markoviană
+model = MarkovNetwork(edges)
+
+# Matricea potentialului pentru fiecare pereche de statii vecine
+potential_matrix = np.array([
+    [0.7, 0.2, 0.1],
+    [0.2, 0.6, 0.2],
+    [0.1, 0.3, 0.6]
+])
+
+# Adăugăm factorii pentru fiecare muchie (statie vecină)
+for edge in edges:
+    factor = DiscreteFactor(variables=edge, cardinality=[3, 3], values=potential_matrix.flatten())
+    model.add_factors(factor)
+
+# Adăugăm distributiile initiale pentru fiecare nod
+for node, probs in initial_probabilities.items():
+    factor = DiscreteFactor(variables=[node], cardinality=[3], values=probs)
+    model.add_factors(factor)
+
+# Facem inferenta MAP folosind Belief Propagation si adaugam observatii
+bp = BeliefPropagation(model)
+
+# Obs ca la statia 0 este „Ploaie” si la statia 3 „Nori”
+observations = {0: 1, 3: 2}
+
+# Inferentă MAP cu observatii
+# Facem inferenta doar pentru statiile care nu sunt observate (statiile 1, 2, 4)
+map_estimate = bp.map_query(variables=[1, 2, 4], evidence=observations)
+
+# Afisam starea prezisa pentru fiecare statie
+weather_states = {0: "Soare", 1: "Ploaie", 2: "Nori"}
+predicted_weather = {station: weather_states[state] for station, state in map_estimate.items()}
+print(predicted_weather)
