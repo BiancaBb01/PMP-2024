@@ -1,0 +1,56 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
+from pgmpy.models import MarkovNetwork
+from pgmpy.factors.discrete import DiscreteFactor
+from pgmpy.inference import BeliefPropagation
+
+# a) Def structura Markov
+model = MarkovNetwork()
+
+# Adaugam nodurile
+nodes = ['A1', 'A2', 'A3', 'A4', 'A5']
+
+# Adaugam relatiile dintre noduri (muchiile)
+edges = [('A1', 'A2'), ('A1', 'A3'), ('A2', 'A4'), ('A2', 'A5'), ('A3', 'A4'), ('A4', 'A5')]
+model.add_nodes_from(nodes)
+model.add_edges_from(edges)
+
+# Vizualizare graf markov
+graph = nx.Graph()
+graph.add_edges_from(edges)
+
+# folosim spring layout pt vizualizare
+pos = nx.spring_layout(graph)# calc poz nodurilor intr-un graf
+nx.draw(graph, pos, with_labels=True, node_color='lightblue', node_size=2000, font_size=14, font_weight='bold', edge_color='gray')
+plt.show()
+
+# b) def variabilele
+
+factor_A1_A2 = DiscreteFactor(['A1', 'A2'], [2, 2], np.array([1, 2, 3, 4]))
+factor_A1_A3 = DiscreteFactor(['A1', 'A3'], [2, 2], np.array([1, 5, 2, 3]))
+factor_A2_A4 = DiscreteFactor(['A2', 'A4'], [2, 2], np.array([1, 3, 2, 4]))
+factor_A2_A5 = DiscreteFactor(['A2', 'A5'], [2, 2], np.array([1, 2, 5, 3]))
+factor_A3_A4 = DiscreteFactor(['A3', 'A4'], [2, 2], np.array([4, 2, 1, 5]))
+factor_A4_A5 = DiscreteFactor(['A4', 'A5'], [2, 2], np.array([3, 1, 4, 2]))
+
+
+model.add_factors(factor_A1_A2, factor_A1_A3, factor_A2_A4, factor_A2_A5, factor_A3_A4, factor_A4_A5)
+
+#Inferenta in reteaua Markov
+bp = BeliefPropagation(model)
+joint_prob = bp.query(variables=nodes)
+
+
+print("Joint Probability Distribution:")
+print(joint_prob)
+
+# prob maxima
+max_prob_index = joint_prob.values.argmax()
+max_prob_value = joint_prob.values.flatten()[max_prob_index]
+
+
+state_shape = joint_prob.cardinality
+max_prob_state = np.unravel_index(max_prob_index, state_shape)
+
+print(f"Maximum Probability : {max_prob_state}, Probability: {max_prob_value}")
