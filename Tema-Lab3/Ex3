@@ -1,0 +1,90 @@
+# Importăm bibliotecile necesare
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import savefig
+from pgmpy.models import MarkovModel
+from pgmpy.factors.discrete import DiscreteFactor
+from pgmpy.inference import BeliefPropagation
+
+# a) Crearea imaginii initiala
+denoised_image = np.random.randint(0, 2, size=(5, 5))
+plt.imshow(denoised_image, cmap='gray')
+plt.title("Imaginea Initiala")
+
+plt.savefig('denoised_image1.png')
+# b) Adaugarea zgomotului
+noisy_image = denoised_image.copy()
+
+# Selectam 10% dintre pixeli (3-4 pixeli) pentru a fi zgomotosi
+num_noisy_pixels = int(0.1 * denoised_image.size)
+indices = np.random.choice(np.arange(denoised_image.size), size=num_noisy_pixels, replace=False)
+
+# Schimbam valorile selectate pentru a simula zgomotul
+for idx in indices:
+    row, col = divmod(idx, denoised_image.shape[1])
+    noisy_image[row, col] = 1 - noisy_image[row, col]  # Inversam pixelii
+
+# c) Definirea retelei Markoviene pe baza imaginii cu zgomot
+rows, cols = noisy_image.shape
+edges = []
+for i in range(rows):
+    for j in range(cols):
+        if i > 0:  # Vecinul de deasupra (N)
+            edges.append(((i, j), (i-1, j)))
+        if i < rows - 1:  # Vecinul de dedesubt (S)
+            edges.append(((i, j), (i+1, j)))
+        if j > 0:  # Vecinul din stânga (W)
+            edges.append(((i, j), (i, j-1)))
+        if j < cols - 1:  # Vecinul din dreapta (E)
+            edges.append(((i, j), (i, j+1)))
+
+# Cream modelul Markovian
+model = MarkovModel(edges)
+
+# d) Definirea functiei de energie si a factorilor
+lambda_param = 2.0  # Factor de regularizare
+
+# Definirea factorilor pentru fiecare pixel pe baza observatiilor si a vecinilor
+for i in range(rows):
+    for j in range(cols):
+        # Penalizarea intre pixelul curat si cel observat
+        observed_value = noisy_image[i, j]
+        factor_observed = DiscreteFactor(
+            variables=[(i, j)],
+            cardinality=[2],
+            values=[np.exp(-lambda_param * (0 - observed_value) ** 2), np.exp(-lambda_param * (1 - observed_value) ** 2)]
+        )
+        model.add_factors(factor_observed)
+
+        # Adaugam factorii pentru relatiile intre pixeli si vecinii lor
+        for neighbor in [(i-1, j), (i+1, j), (i, j-1), (i, j+1)]:
+            if 0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols:
+                factor_neighbors = DiscreteFactor(
+                    variables=[(i, j), neighbor],
+                    cardinality=[2, 2],
+                    values=[np.exp(-(0 - 0) ** 2), np.exp(-(0 - 1) ** 2),
+                            np.exp(-(1 - 0) ** 2), np.exp(-(1 - 1) ** 2)]
+                )
+                model.add_factors(factor_neighbors)
+
+# e) Estimarea imaginii originale (cu zgomot) folosind MAP
+bp = BeliefPropagation(model)
+map_estimate = bp.map_query()
+
+# Reconstruim imaginea cu zgomot estimată folosind inferența MAP
+reconstructed_noisy_image = np.zeros_like(noisy_image)
+for i in range(rows):
+    for j in range(cols):
+        reconstructed_noisy_image[i, j] = map_estimate[(i, j)]
+
+# Afisam imaginea zgomotoasa
+plt.imshow(reconstructed_noisy_image, cmap='gray')
+plt.title("Imaginea Zgomotoasă Estimată")
+
+plt.savefig('reconstructed_noisy_image.png')
+
+# Comparam cu imaginea originala
+plt.imshow(denoised_image, cmap='gray')
+plt.title("Imaginea Denoised ")
+
+plt.savefig('denoised_image.png')
