@@ -1,0 +1,61 @@
+import numpy as np
+from hmmlearn import hmm
+import matplotlib.pyplot as plt
+
+
+states = ["dificil", "mediu", "usor"]
+n_states = len(states)
+observations = ["FB", "B", "S", "NS"]
+n_observations = len(observations)
+
+# Def prob initiale
+start_probability = np.array([1/3, 1/3, 1/3])
+
+# Def prob de tranzitie
+transition_probability = np.array([
+    [0.0, 0.5, 0.5],
+    [0.5, 0.25, 0.25],
+    [0.5, 0.25, 0.25]
+])
+
+
+emission_probability = np.array([
+    [0.1, 0.2, 0.4, 0.3],
+    [0.15, 0.25, 0.5, 0.1],
+    [0.2, 0.3, 0.4, 0.1]
+])
+
+# Initializarea HMM
+model = hmm.CategoricalHMM(n_components=n_states)
+
+# Setarea parametrilor
+model.startprob_ = start_probability
+model.transmat_ = transition_probability
+model.emissionprob_ = emission_probability
+
+
+obs_sequence = np.array([0, 0, 2, 1, 1, 2, 1, 1, 3, 1, 1, 2]).reshape(-1, 1)
+
+# cautam cea mai probabila secventa de dificultati
+logprob, hidden_states = model.decode(obs_sequence, algorithm="viterbi")
+
+# maparea starilor
+most_likely_sequence = [states[state] for state in hidden_states]
+
+
+print("Cea mai probabilă secvență de dificultăți a testului:", most_likely_sequence)
+print("Probabilitatea acestei secvențe:", np.exp(logprob))
+
+
+plt.figure(figsize=(12, 6))
+plt.plot(obs_sequence, label='Observed Grades', marker='o')
+plt.plot(hidden_states, label='Estimated Difficulties', marker='x')
+
+plt.yticks(ticks=np.arange(n_states), labels=states)
+plt.xticks(ticks=np.arange(len(obs_sequence)), labels=obs_sequence.flatten())
+plt.xlabel('Test Index')
+plt.ylabel('State')
+plt.title('Observed Grades vs. Estimated Difficulties')
+plt.legend()
+plt.grid(True)
+plt.show()
