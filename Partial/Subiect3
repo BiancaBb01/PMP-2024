@@ -19,7 +19,7 @@ alpha_posterior_1 = alpha_prior_1 + numar_banuri_1
 beta_posterior_1 = beta_prior_1 + numar_steme_1
 
 # Graficul - Primul experiment
-theta = np.linspace(0, 1, 1000)  # Posibile valori pentru θ
+theta = np.linspace(0, 1, 1000)  # Posibile valori 
 distributie_prior_1 = beta.pdf(theta, alpha_prior_1, beta_prior_1)
 distributie_posterior_1 = beta.pdf(theta, alpha_posterior_1, beta_posterior_1)
 
