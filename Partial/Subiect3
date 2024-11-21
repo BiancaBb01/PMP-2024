@@ -1,0 +1,77 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import beta
+
+# Subiectul 3.1 - Determinam distributia a posteriori pe baza primului experiment
+# Datele din primul experiment
+rezultate_experiment_1 = "b,b,s,b,s,s,b,s,s,b".split(",")
+
+
+alpha_prior_1 = 1
+beta_prior_1 = 1
+
+
+numar_banuri_1 = rezultate_experiment_1.count("b")
+numar_steme_1 = rezultate_experiment_1.count("s")
+
+# Actualizam distributia
+alpha_posterior_1 = alpha_prior_1 + numar_banuri_1
+beta_posterior_1 = beta_prior_1 + numar_steme_1
+
+# Graficul - Primul experiment
+theta = np.linspace(0, 1, 1000)  # Posibile valori pentru θ
+distributie_prior_1 = beta.pdf(theta, alpha_prior_1, beta_prior_1)
+distributie_posterior_1 = beta.pdf(theta, alpha_posterior_1, beta_posterior_1)
+
+plt.figure(figsize=(12, 6))
+plt.plot(theta, distributie_prior_1, label=f"Distributie a priori: Beta({alpha_prior_1}, {beta_prior_1})", color="blue")
+plt.plot(theta, distributie_posterior_1, label=f"Distributie a posteriori: Beta({alpha_posterior_1}, {beta_posterior_1})", color="red")
+plt.fill_between(theta, distributie_prior_1, alpha=0.2, color="blue")
+plt.fill_between(theta, distributie_posterior_1, alpha=0.2, color="red")
+
+plt.title("Distributia a priori si a posteriori dupa primul experiment")
+plt.xlabel("Probabilitatea ca moneda sa cada pe ban (θ)")
+plt.ylabel("Densitatea de probabilitate")
+plt.legend()
+plt.grid()
+plt.show()
+
+
+print(f"Parametrii a posteriori dupa primul experiment: alpha = {alpha_posterior_1}, beta = {beta_posterior_1}")
+
+# Subiectul 3.2 - Realizam un nou experiment si actualizam distributia
+
+alpha_prior_2 = alpha_posterior_1
+beta_prior_2 = beta_posterior_1
+
+# Generam un nou set de 10 aruncari
+np.random.seed(42)
+theta_true = 0.5  # Prob reala
+nou_experiment = np.random.choice(["b", "s"], size=10, p=[theta_true, 1 - theta_true])
+
+
+numar_banuri_2 = np.sum(nou_experiment == "b")
+numar_steme_2 = np.sum(nou_experiment == "s")
+
+alpha_posterior_2 = alpha_prior_2 + numar_banuri_2
+beta_posterior_2 = beta_prior_2 + numar_steme_2
+
+# Graficul -Al doilea experiment
+distributie_prior_2 = beta.pdf(theta, alpha_prior_2, beta_prior_2)
+distributie_posterior_2 = beta.pdf(theta, alpha_posterior_2, beta_posterior_2)
+
+plt.figure(figsize=(12, 6))
+plt.plot(theta, distributie_prior_2, label=f"Distributie a priori: Beta({alpha_prior_2}, {beta_prior_2})", color="blue")
+plt.plot(theta, distributie_posterior_2, label=f"Distributie a posteriori: Beta({alpha_posterior_2}, {beta_posterior_2})", color="red")
+plt.fill_between(theta, distributie_prior_2, alpha=0.2, color="blue")
+plt.fill_between(theta, distributie_posterior_2, alpha=0.2, color="red")
+
+plt.title("Distributia a priori si a posteriori dupa al doilea experiment")
+plt.xlabel("Probabilitatea ca moneda sa cada pe ban (θ)")
+plt.ylabel("Densitatea de probabilitate")
+plt.legend()
+plt.grid()
+plt.show()
+
+print(f"Parametrii a priori pentru al doilea experiment: alpha = {alpha_prior_2}, beta = {beta_prior_2}")
+print(f"Parametrii a posteriori dupa al doilea experiment: alpha = {alpha_posterior_2}, beta = {beta_posterior_2}")
