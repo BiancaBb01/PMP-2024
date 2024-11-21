@@ -4,7 +4,7 @@ from scipy.stats import beta
 
 # Subiectul 3.1 - Determinam distributia a posteriori pe baza primului experiment
 # Datele din primul experiment
-rezultate_experiment_1 = "b,b,s,b,s,s,b,s,s,b".split(",")
+rezultate_experiment_1 = "s,s,b,b,s,s,s,s,b,s".split(",")
 
 
 alpha_prior_1 = 1
@@ -40,7 +40,7 @@ plt.show()
 print(f"Parametrii a posteriori dupa primul experiment: alpha = {alpha_posterior_1}, beta = {beta_posterior_1}")
 
 # Subiectul 3.2 - Realizam un nou experiment si actualizam distributia
-
+rezultate_experiment_1 = "b,b,s,b,s,s,b,s,s,b".split(",")
 alpha_prior_2 = alpha_posterior_1
 beta_prior_2 = beta_posterior_1
 
