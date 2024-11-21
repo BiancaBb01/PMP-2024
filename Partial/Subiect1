@@ -1,0 +1,73 @@
+from hmmlearn import hmm
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+dimensiune_grid = (10, 10)
+
+# Lista de culori predefinite
+culori = [
+    "red", "blue", "green", "yellow",
+    "purple", "orange", "pink", "cyan",
+    "brown", "lime"
+]
+
+
+df = pd.read_csv('grid_culori.csv', header=None)  
+grid_culori = df.to_numpy()
+
+# Validarea dimensiunii gridului
+print("Dimensiunea gridului citit:", grid_culori.shape)
+if grid_culori.shape != dimensiune_grid:
+    raise ValueError("Gridul trebuie sa aiba dimensiunea exacta 10x10.")
+
+# Validarea culorilor din grid
+culori_nevalidate = set(grid_culori.flatten()) - set(culori)
+if culori_nevalidate:
+    print("Grid-ul contine culori nevalidate:", culori_nevalidate)
+    raise ValueError("Exista culori nespecificate in grid.")
+
+observatii = grid_culori[0].tolist()
+
+# Mapare culori -> indecsi
+culoare_to_idx = {culoare: idx for idx, culoare in enumerate(culori)}
+idx_to_culoare = {idx: culoare for culoare, idx in culoare_to_idx.items()}
+
+# Transformam secventa de observatii in indecsi
+observatii_idx = [culoare_to_idx[c] for c in observatii]
+
+# Definim starile ascunse ca fiind toate pozitiile din grid (100 de stari)
+numar_stari = dimensiune_grid[0] * dimensiune_grid[1]
+stari_ascunse = [(i, j) for i in range(dimensiune_grid[0]) for j in range(dimensiune_grid[1])]
+stare_to_idx = {stare: idx for idx, stare in enumerate(stari_ascunse)}
+idx_to_stare = {idx: stare for stare, idx in stare_to_idx.items()}
+
+# Matrice de tranzitie
+transitions = np.zeros((numar_stari, numar_stari))
+for i, j in stari_ascunse:
+    vecini = [
+        (i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)  # sus, jos, stanga, dreapta
+    ]
+    vecini_valizi = [stare_to_idx[(x, y)] for x, y in vecini if 0 <= x < dimensiune_grid[0] and 0 <= y < dimensiune_grid[1]]
+    for vecin in vecini_valizi:
+        transitions[stare_to_idx[(i, j)], vecin] = 1 / len(vecini_valizi)
+
+# Matrice de emisie
+emissions = np.zeros((numar_stari, len(culori)))
+for idx, (i, j) in enumerate(stari_ascunse):
+    culoare = grid_culori[i, j]
+    culoare_idx = culoare_to_idx[culoare]
+    emissions[idx, culoare_idx] = 1.0
+
+# Normalizare matrice de emisie
+emissions = emissions / emissions.sum(axis=1, keepdims=True)
+
+# Modelul HMM
+model = hmm.MultinomialHMM(n_components=numar_stari, init_params="", n_trials=1)
+model.startprob_ = np.full(numar_stari, 1 / numar_stari)  # probabilitati initiale uniforme
+model.transmat_ = transitions
+model.emissionprob_ = emissions
+
+# Rulam algoritmul Viterbi pentru secventa de observatii
+observatii_reshape = np.array([observatii_idx]).T  # Reshape pentru model
+logprob, secventa_stari = model.decode(observatii_reshape, algorithm="viterbi")
